@@ -36,6 +36,7 @@
             if ($(this).attr('checked')) {
                 complete = false;
             }
+            // ?complete= 이렇게 보내는 형식은 form value
             $.get("complete-todo/"+id+"?complete="+complete, function(data) {
                 if (complete) {
                     $self.attr('checked', 'checked');
