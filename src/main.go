@@ -2,15 +2,20 @@ package main
 
 import (
 	"Go-Todo/src/app"
+	"log"
 	"net/http"
 
 	"github.com/urfave/negroni"
 )
 
 func main() {
-	m := app.MakeNewHandler()
+	m := app.MakeHandler()
 	n := negroni.Classic()
 	n.UseHandler(m)
 
-	http.ListenAndServe(":3000", n)
+	log.Println("Started App")
+	err := http.ListenAndServe(":3000", n)
+	if err != nil {
+		panic(err)
+	}
 }
