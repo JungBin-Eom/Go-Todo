@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strconv"
 	"testing"
 
@@ -14,9 +15,11 @@ import (
 )
 
 func TestTodos(t *testing.T) {
+	os.Remove("./test.db")
 	assert := assert.New(t)
-	ts := httptest.NewServer(MakeHandler())
-
+	ah := MakeHandler()
+	defer ah.Close()
+	ts := httptest.NewServer(ah)
 	defer ts.Close()
 	res, err := http.PostForm(ts.URL+"/todos", url.Values{"name": {"Test todo"}})
 	assert.NoError(err)

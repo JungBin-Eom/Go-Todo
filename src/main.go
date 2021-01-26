@@ -9,7 +9,8 @@ import (
 )
 
 func main() {
-	m := app.MakeHandler()
+	m := app.MakeHandler("./test.db") // flag.Args로 실행 인자로 db 파일 명을 설정할 수 있다.
+	defer m.Close()
 	n := negroni.Classic()
 	n.UseHandler(m)
 

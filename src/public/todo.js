@@ -11,7 +11,6 @@
             if (item) {
                 $.post("/todos", {name:item}, addItem);
                 // todoListItem.append("<li><div class='form-check'><label class='form-check-label'><input class='checkbox' type='checkbox' />" + item + "<i class='input-helper'></i></label></div><i class='remove mdi mdi-close-circle-outline'></i></li>");
-                // todoListInput.val("");
             };
         });
     
@@ -21,6 +20,7 @@
             } else {
                 todoListItem.append("<li "+" id='"+item.id+"'><div class='form-check'><label class='form-check-label'><input class='checkbox' type='checkbox' />" + item.name + "<i class='input-helper'></i></label></div><i class='remove mdi mdi-close-circle-outline'></i></li>");
             }
+            todoListInput.val("");
         };
     
         $.get('/todos', function(items) {
