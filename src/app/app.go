@@ -3,17 +3,36 @@ package app
 import (
 	"Go-Todo/src/model"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
+
+	"github.com/gorilla/sessions"
+	"github.com/urfave/negroni"
 
 	"github.com/gorilla/mux"
 	"github.com/unrolled/render"
 )
 
+var store = sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")))
 var rd *render.Render = render.New()
 
 type AppHandler struct {
 	http.Handler
 	db model.DBHandler
+}
+
+func getSessionID(r *http.Request) string {
+	session, err := store.Get(r, "session")
+	if err != nil {
+		return ""
+	}
+
+	val := session.Values["id"]
+	if val == nil {
+		return ""
+	}
+	return val.(string)
 }
 
 func (a *AppHandler) indexHandler(w http.ResponseWriter, r *http.Request) {
@@ -68,11 +87,33 @@ func (a *AppHandler) Close() {
 	a.db.Close()
 }
 
+func CheckSignin(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+	// if request URL is /signin.html, then next()
+	if strings.Contains(r.URL.Path, "/signin") || strings.Contains(r.URL.Path, "/auth") {
+		next(w, r)
+		return
+	}
+
+	// if user already signed in
+	sessionID := getSessionID(r)
+	if sessionID != "" {
+		next(w, r) // NewStatic 핸들러로 넘어간다는 뜻
+		return
+	}
+	// if not user sign in
+	// redirect signin.html
+	http.Redirect(w, r, "/signin.html", http.StatusTemporaryRedirect)
+}
+
 func MakeHandler(filepath string) *AppHandler {
 	// addTestTodos()
 	r := mux.NewRouter()
+	// negroni에서 미들웨어 추가(데코레이터)
+	n := negroni.New(negroni.NewRecovery(), negroni.NewLogger(), negroni.HandlerFunc(CheckSignin), negroni.NewStatic(http.Dir("public")))
+	n.UseHandler(r)
+
 	a := &AppHandler{
-		Handler: r,
+		Handler: n,
 		db:      model.NewDBHandler(filepath),
 	}
 
@@ -81,6 +122,8 @@ func MakeHandler(filepath string) *AppHandler {
 	r.HandleFunc("/todos", a.addTodoHandler).Methods("POST")
 	r.HandleFunc("/todos/{id:[0-9]+}", a.removeTodoHandler).Methods("DELETE")
 	r.HandleFunc("/complete-todo/{id:[0-9]+}", a.completeTodoHandler).Methods("GET")
+	r.HandleFunc("/auth/google/login", googleLoginHandler)
+	r.HandleFunc("/auth/google/callback", googleAuthCallback)
 
 	return a
 }
